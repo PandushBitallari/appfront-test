@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use App\Models\Product;
 
-class PriceChangeNotification extends Mailable
+class PriceChangeNotification extends Mailable implements ShouldQueue
 {
     public $product;
     public $oldPrice;
