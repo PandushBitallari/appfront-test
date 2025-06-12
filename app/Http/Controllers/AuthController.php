@@ -19,7 +19,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         if (Auth::attempt($request->only('email', 'password'), $request->has('remember'))) {
-            return redirect()->route('admin.products');
+            return redirect()->route('admin.products.index');
         }
 
         return redirect()->back()->with('error', 'Invalid login credentials');
@@ -31,11 +31,11 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    public function products()
-    {
-        $products = Product::all();
-        return view('admin.products', compact('products'));
-    }
+    // public function products()
+    // {
+    //     $products = Product::all();
+    //     return view('admin.products', compact('products'));
+    // }
 
     // public function editProduct($id)
     // {

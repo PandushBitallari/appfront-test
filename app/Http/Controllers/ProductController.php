@@ -2,59 +2,84 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\Product\StoreProductRequest;
+use App\Http\Requests\Product\UpdateProductRequest;
 use App\Models\Product;
+use App\Repositories\ProductRepository;
+use Illuminate\Support\Facades\Request;
 
 class ProductController extends Controller
 {
-    public function index()
-    {
-        $products = Product::all();
-        $exchangeRate = $this->getExchangeRate();
+    protected $redirectTo = 'admin.products.index';
+    protected $repository;
 
-        return view('products.list', compact('products', 'exchangeRate'));
-    }
-
-    public function show(Request $request)
-    {
-        $id = $request->route('product_id');
-        $product = Product::find($id);
-        $exchangeRate = $this->getExchangeRate();
-
-        return view('products.show', compact('product', 'exchangeRate'));
+    public function __construct(ProductRepository $repository) {
+        $this->repository = $repository;
     }
 
     /**
-     * @return float
+     * Display a listing of the resource.
      */
-    private function getExchangeRate()
+    public function index()
     {
-        try {
-            $curl = curl_init();
+        $products = $this->repository->getAll();
 
-            curl_setopt_array($curl, [
-                CURLOPT_URL => "https://open.er-api.com/v6/latest/USD",
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 5,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => "GET",
-            ]);
+        return view('admin.products', compact('products'));
+    }
 
-            $response = curl_exec($curl);
-            $err = curl_error($curl);
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return view('admin.add_product');
+    }
 
-            curl_close($curl);
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreProductRequest $request)
+    {
+        $input = $request->validated();
 
-            if (!$err) {
-                $data = json_decode($response, true);
-                if (isset($data['rates']['EUR'])) {
-                    return $data['rates']['EUR'];
-                }
-            }
-        } catch (\Exception $e) {
+        $this->repository->create($input);
 
-        }
+        return redirect()->route($this->redirectTo)->with('success', 'Product added successfully');
+    }
 
-        return env('EXCHANGE_RATE', 0.85);
+    /**
+     * Display the specified resource.
+     */
+    public function show(Product $product)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Product $product)
+    {
+        return view('admin.edit_product', compact('product'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateProductRequest $request, Product $product)
+    {
+        $input = $request->validated();
+        $this->repository->update($product, $input);
+        return redirect()->route($this->redirectTo)->with('success', 'Product updated successfully');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Product $product)
+    {
+        $this->repository->delete($product);
+
+        return redirect()->route($this->redirectTo)->with('success', 'Product deleted successfully');
     }
 }
