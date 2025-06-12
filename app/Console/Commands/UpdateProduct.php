@@ -2,11 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Product;
-use Illuminate\Support\Facades\Validator;
 use App\Jobs\SendPriceChangeNotification;
-use Illuminate\Support\Facades\Log;
+use App\Repositories\ProductRepository;
+use Exception;
+use Illuminate\Console\Command;
 
 class UpdateProduct extends Command
 {
@@ -41,9 +40,6 @@ class UpdateProduct extends Command
      */
     public function handle()
     {
-        $id = $this->argument('id');
-        $product = Product::find($id);
-
         $data = [];
         if ($this->option('name')) {
             $data['name'] = $this->option('name');
@@ -56,6 +52,7 @@ class UpdateProduct extends Command
                 return 1;
             }
         }
+
         if ($this->option('description')) {
             $data['description'] = $this->option('description');
         }
@@ -64,32 +61,25 @@ class UpdateProduct extends Command
         }
 
 
-        $oldPrice = $product->price;
+        if ( ! empty($data)) {
+            $repo = app(ProductRepository::class);
 
-        if (!empty($data)) {
-            $product->update($data);
-            $product->save();
-
-            $this->info("Product updated successfully.");
-
-            // Check if price has changed
-            if (isset($data['price']) && $oldPrice != $product->price) {
-                $this->info("Price changed from {$oldPrice} to {$product->price}.");
-
-                $notificationEmail = env('PRICE_NOTIFICATION_EMAIL', 'admin@example.com');
-
-                try {
-                    SendPriceChangeNotification::dispatch(
-                        $product,
-                        $oldPrice,
-                        $product->price,
-                        $notificationEmail
-                    );
-                    $this->info("Price change notification dispatched to {$notificationEmail}.");
-                } catch (\Exception $e) {
-                    $this->error("Failed to dispatch price change notification: " . $e->getMessage());
-                }
+            $id = $this->argument('id');
+            $product = $repo->find($id);
+            if ( ! $product) {
+                $this->error("Product not found.");
+                return 1;
             }
+
+            try {
+                $repo->update($product, $data);
+
+                $this->info("Product updated successfully.");
+            } catch (Exception $e) {
+                $this->error("Error updating product: ".$e->getMessage());
+            }
+
+
         } else {
             $this->info("No changes provided. Product remains unchanged.");
         }

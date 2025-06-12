@@ -55,7 +55,7 @@ abstract class BaseRepository
 
     public function find($id)
     {
-        return $this->query()->findOrFail($id);
+        return $this->query()->find($id);
     }
 
     public function query()
