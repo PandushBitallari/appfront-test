@@ -38,7 +38,7 @@ class AuthFunctionalitiesTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertRedirect(route('admin.products'));
+        $response->assertRedirect(route('admin.products.index'));
         $this->assertAuthenticatedAs($user);
     }
 
